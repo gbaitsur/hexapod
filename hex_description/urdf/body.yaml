@@ -1,0 +1,55 @@
+lf_attachment_x: 0.18234
+lf_attachment_y: 0.104843
+lf_attachment_z: 0.048
+lf_attachment_zrot: 45
+
+lm_attachment_x: 0
+lm_attachment_y: 0.114198
+lm_attachment_z: 0.048
+lm_attachment_zrot: 90
+
+lr_attachment_x: -0.182343
+lr_attachment_y: 0.084843
+lr_attachment_z: 0.048
+lr_attachment_zrot: 135
+
+rf_attachment_x: 0.182343 
+rf_attachment_y: -0.104843
+rf_attachment_z: 0.048
+rf_attachment_zrot: -45
+
+rm_attachment_x: 0
+rm_attachment_y: -0.114198
+rm_attachment_z: 0.048
+rm_attachment_zrot: -90
+
+rr_attachment_x: -0.182343
+rr_attachment_y: -0.084843
+rr_attachment_z: 0.048
+rr_attachment_zrot: -135
+
+
+
+
+coxa_length: 0.0428
+femur_length: 0.07
+tibia_length: 0.0675
+tarsus_length: 0.0713
+
+
+coxa_min_angle: -35
+coxa_max_angle: 35
+
+femur_min_angle: -85
+femur_max_angle: 40
+
+tibia_min_angle: -20
+tibia_max_angle: 115
+
+tarsus_min_angle: 0
+tarsus_max_angle: 90
+
+
+
+neutral_foot_distance: 0.12
+neutral_clearance: 0

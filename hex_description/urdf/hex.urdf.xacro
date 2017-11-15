@@ -1,0 +1,401 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="hex">
+
+<xacro:property name="to_rad" value="${3.14159265359 / 180}" />
+
+<xacro:property name="body_yaml" value="${load_yaml('body.yaml')}"/>
+
+
+
+
+  <material name="Alum">
+    <color rgba=".9 .9 .9 1"/>
+  </material>
+
+  <material name="Plastic">
+    <color rgba=".3 .3 .3 1"/>
+  </material>
+
+
+
+
+	<link name="base_link">
+		<inertial>
+			<mass value="1" />
+			<origin xyz="0 0 0" />
+			<inertia ixx="0.011" ixy="0.0" ixz="0.0"
+					 iyy="0.009" iyz="0.0" izz="0.002" />
+		</inertial>
+		<visual>
+			<geometry>
+				<mesh filename="package://hex_description/urdf/stl/body.stl" scale="1 1 1"/>
+			</geometry>
+			<material name="Alum"/>
+		</visual>
+		<collision>
+			<geometry>
+				<mesh filename="package://hex_description/urdf/stl/body.stl" scale="1 1 1"/>
+			</geometry>
+		</collision>
+		
+	</link>
+
+	<gazebo reference="base_link">
+	    <material>Gazebo/Grey</material>
+	</gazebo>
+
+
+	<xacro:macro name="leg" params="prefix x y z zrot">
+		<link name="${prefix}">
+			<inertial>
+				<mass value="0.06" />
+				<origin xyz="0 0 0" />
+				<inertia ixx="0.000026" ixy="0.0" ixz="0.0"
+					 iyy="0.000016" iyz="0.0" izz="0.000024" />
+			</inertial>
+			<visual>
+				<geometry>
+					<mesh filename="package://hex_description/urdf/stl/coxa_servo.stl" scale="1 1 1"/>
+				</geometry>
+				<material name="Plastic" />
+			</visual>
+			<collision>
+				<geometry>
+					<mesh filename="package://hex_description/urdf/stl/coxa_servo.stl" scale="1 1 1"/>
+				</geometry>
+			</collision>
+		</link>
+		<joint name="${prefix}_mount" type="fixed">
+			<parent link="base_link"/>
+			<child link="${prefix}"/>
+			<origin xyz="${x} ${y} ${z}" rpy="0 0 ${zrot * to_rad}" />
+		</joint>
+		<gazebo reference="${prefix}">
+		    <material>Gazebo/Grey</material>
+		</gazebo>
+	</xacro:macro>
+
+
+	<xacro:macro name="coxa" params="prefix min_lim max_lim">
+		<link name="${prefix}_coxa">
+			<inertial>
+				<mass value="0.03" />
+				<origin xyz="0 0 0" />
+				<inertia ixx="0.000013" ixy="0.0" ixz="0.0"
+					 iyy="0.000015" iyz="0.0" izz="0.000007" />
+			</inertial>
+			<visual>
+				<geometry>
+					<mesh filename="package://hex_description/urdf/stl/coxa.stl" scale="1 1 1"/>
+				</geometry>
+				<material name="Alum"/>
+			</visual>
+			<collision>
+				<geometry>
+					<mesh filename="package://hex_description/urdf/stl/coxa.stl" scale="1 1 1"/>
+				</geometry>
+			</collision>
+		</link>
+		<joint name="${prefix}_coxa_joint" type="revolute">
+			<axis xyz="0 0 1"/>
+			<limit effort="1000.0" lower="${min_lim * to_rad}" upper="${max_lim * to_rad}" velocity="0.5"/>
+			<parent link="${prefix}"/>
+			<child link="${prefix}_coxa"/>
+			<origin xyz="0 0 0" rpy="0 0 0" />
+		</joint>
+		<gazebo reference="${prefix}_coxa">
+		    <material>Gazebo/Grey</material>
+		</gazebo>
+	</xacro:macro>
+
+	<xacro:macro name="femur_servo" params="prefix">
+		<link name="${prefix}_coxa2">
+			<inertial>
+				<mass value="1" />
+				<origin xyz="0 0 0" />
+				<inertia ixx="0.000024" ixy="0.0" ixz="0.0"
+					 iyy="0.000026" iyz="0.0" izz="0.000016" />
+			</inertial>
+			<visual>
+				<geometry>
+					<mesh filename="package://hex_description/urdf/stl/femur_servo.stl" scale="1 1 1"/>
+				</geometry>
+				<material name="Plastic" />
+			</visual>
+			<collision>
+				<geometry>
+					<mesh filename="package://hex_description/urdf/stl/femur_servo.stl" scale="1 1 1"/>
+				</geometry>
+			</collision>
+		</link>
+		<joint name="${prefix}_coxa_to_femur_servo" type="fixed">
+			<parent link="${prefix}_coxa"/>
+			<child link="${prefix}_coxa2"/>
+			<origin xyz="0 0 0" rpy="0 0 0" />
+		</joint>
+			<gazebo reference="${prefix}_coxa2">
+	    	<material>Gazebo/Grey</material>
+        </gazebo>
+	</xacro:macro>
+
+	<xacro:macro name="femur" params="prefix min_lim max_lim">
+		<link name="${prefix}_femur">
+			<inertial>
+				<mass value="0.04" />
+				<origin xyz="0 0 0" />
+				<inertia ixx="0.000025" ixy="0.0" ixz="0.0"
+					 iyy="0.000027" iyz="0.0" izz="0.000042" />
+			</inertial>
+			<visual>
+				<geometry>
+					<mesh filename="package://hex_description/urdf/stl/femur.stl" scale="1 1 1"/>
+				</geometry>
+				<material name="Alum"/>
+			</visual>
+			<collision>
+				<geometry>
+					<mesh filename="package://hex_description/urdf/stl/femur.stl" scale="1 1 1"/>
+				</geometry>
+			</collision>
+		</link>
+		<joint name="${prefix}_femur_joint" type="revolute">
+			<axis xyz="0 1 0"/>
+			<limit effort="1000.0" lower="${min_lim * to_rad}" upper="${max_lim * to_rad}" velocity="0.5"/>
+			<parent link="${prefix}_coxa"/>
+			<child link="${prefix}_femur"/>
+			<origin xyz="${body_yaml['coxa_length']} 0 0" rpy="0 0 0" />
+		</joint>
+		<gazebo reference="${prefix}_femur">
+		    <material>Gazebo/Grey</material>
+		</gazebo>
+	</xacro:macro>
+
+	<xacro:macro name="tibia_servo" params="prefix min_lim max_lim">
+		<link name="${prefix}_tibia">
+			<inertial>
+				<mass value="0.06" />
+				<origin xyz="0 0 0" />
+				<inertia ixx="0.000023" ixy="0.0" ixz="0.0"
+					 iyy="0.000015" iyz="0.0" izz="0.000024" />
+			</inertial>
+			<visual>
+				<geometry>
+					<mesh filename="package://hex_description/urdf/stl/tibia_servo.stl" scale="1 1 1"/>
+				</geometry>
+				<material name="Plastic" />
+			</visual>
+			<collision>
+				<geometry>
+					<mesh filename="package://hex_description/urdf/stl/tibia_servo.stl" scale="1 1 1	"/>
+				</geometry>
+			</collision>
+		</link>
+		<joint name="${prefix}_tibia_joint" type="revolute">
+			<axis xyz="0 1 0"/>
+			<limit effort="1000.0" lower="${min_lim * to_rad}" upper="${max_lim * to_rad}" velocity="0.5"/>
+			<parent link="${prefix}_femur"/>
+			<child link="${prefix}_tibia"/>
+			<origin xyz="${body_yaml['femur_length']} 0 0" rpy="0 0 0" />
+		</joint>
+		<gazebo reference="${prefix}_tibia">
+		    <material>Gazebo/Grey</material>
+		</gazebo>
+	</xacro:macro>
+
+
+	<xacro:macro name="tibia" params="prefix">
+		<link name="${prefix}_tibia2">
+			<inertial>
+				<mass value="0.015" />
+				<origin xyz="0 0 0" />
+				<inertia ixx="0.000006" ixy="0.0" ixz="0.0"
+					 iyy="0.000010" iyz="0.0" izz="0.000010" />
+			</inertial>
+			<visual>
+				<geometry>
+					<mesh filename="package://hex_description/urdf/stl/tibia.stl" scale="1 1 1"/>
+				</geometry>
+				<material name="Alum"/>
+			</visual>
+			<collision>
+				<geometry>
+					<mesh filename="package://hex_description/urdf/stl/tibia.stl" scale="1 1 1"/>
+				</geometry>
+			</collision>
+		</link>
+		<joint name="${prefix}_tibia_servo_to_tibia" type="fixed">
+			<parent link="${prefix}_tibia"/>
+			<child link="${prefix}_tibia2"/>
+			<origin xyz="0 0 0" rpy="0 0 0" />
+		</joint>
+		<gazebo reference="${prefix}_tibia2">
+		    <material>Gazebo/Grey</material>
+		</gazebo>
+	</xacro:macro>
+
+
+	<xacro:macro name="tarsus_servo" params="prefix min_lim max_lim">
+		<link name="${prefix}_tarsus">
+			<inertial>
+				<mass value="0.035" />
+				<origin xyz="0 0 0" />
+				<inertia ixx="0.000009" ixy="0.0" ixz="0.0"
+					 iyy="0.000006" iyz="0.0" izz="0.000010" />
+			</inertial>
+			<visual>
+				<geometry>
+					<mesh filename="package://hex_description/urdf/stl/tarsus_servo.stl" scale="1 1 1"/>
+				</geometry>
+				<material name="Plastic" />
+			</visual>
+			<collision>
+				<geometry>
+					<mesh filename="package://hex_description/urdf/stl/tarsus_servo.stl" scale="1 1 1"/>
+				</geometry>
+			</collision>
+		</link>
+		<joint name="${prefix}_tarsus_joint" type="revolute">
+			<axis xyz="0 1 0"/>i
+			<limit effort="1000.0" lower="${min_lim * to_rad}" upper="${max_lim * to_rad}" velocity="0.5"/>
+			<parent link="${prefix}_tibia"/>
+			<child link="${prefix}_tarsus"/>
+			<origin xyz="${body_yaml['tibia_length']} 0 0" rpy="0 0 0" />
+		</joint>
+		<gazebo reference="${prefix}_tarsus">
+		    <material>Gazebo/Grey</material>
+		</gazebo>
+	</xacro:macro>
+
+	<xacro:macro name="tarsus_alum" params="prefix">
+		<link name="${prefix}_tarsus2">
+			<inertial>
+				<mass value="0.008" />
+				<origin xyz="0 0 0" />
+				<inertia ixx="0.000001" ixy="0.0" ixz="0.0"
+					 iyy="0.000002" iyz="0.0" izz="0.000002" />
+			</inertial>
+			<visual>
+				<geometry>
+					<mesh filename="package://hex_description/urdf/stl/tarsus_alum.stl" scale="1 1 1"/>
+				</geometry>
+				<material name="Alum"/>
+			</visual>
+			<collision>
+				<geometry>
+					<mesh filename="package://hex_description/urdf/stl/tarsus_alum.stl" scale="1 1 1"/>
+				</geometry>
+			</collision>
+		</link>
+		<joint name="${prefix}_tarsus_servo_to_tarsus_alum" type="fixed">
+			<parent link="${prefix}_tarsus"/>
+			<child link="${prefix}_tarsus2"/>
+			<origin xyz="0 0 0" rpy="0 0 0" />
+		</joint>
+		<gazebo reference="${prefix}_tarsus2">
+		    <material>Gazebo/Grey</material>
+		</gazebo>
+	</xacro:macro>
+
+	<xacro:macro name="tarsus_rubber" params="prefix">
+		<link name="${prefix}_tarsus3">
+			<inertial>
+				<mass value="0.004" />
+				<origin xyz="0 0 0" />
+				<inertia ixx="0.0000001" ixy="0.0" ixz="0.0"
+					 iyy="0.0000001" iyz="0.0" izz="0.0000001" />
+			</inertial>
+			<visual>
+				<geometry>
+					<mesh filename="package://hex_description/urdf/stl/tarsus_rubber.stl" scale="1 1 1"/>
+				</geometry>
+				<material name="Plastic" />
+			</visual>
+			<collision>
+				<geometry>
+					<mesh filename="package://hex_description/urdf/stl/tarsus_rubber.stl" scale="1 1 1"/>
+				</geometry>
+			</collision>
+		</link>
+		<joint name="${prefix}_tarsus_alum_to_tarsus_rubber" type="fixed">
+			<parent link="${prefix}_tarsus2"/>
+			<child link="${prefix}_tarsus3"/>
+			<origin xyz="0 0 0" rpy="0 0 0" />
+		</joint>
+		<gazebo reference="${prefix}_tarsus3">
+		    <material>Gazebo/Black</material>
+		</gazebo>
+		 
+	</xacro:macro>
+
+
+
+
+	<xacro:leg prefix="rf" x="${body_yaml['rf_attachment_x']}" y="${body_yaml['rf_attachment_y']}" z="${body_yaml['rf_attachment_z']}" zrot="${body_yaml['rf_attachment_zrot']}"/>
+	<xacro:leg prefix="rm" x="${body_yaml['rm_attachment_x']}" y="${body_yaml['rm_attachment_y']}" z="${body_yaml['rm_attachment_z']}" zrot="${body_yaml['rm_attachment_zrot']}"/>
+	<xacro:leg prefix="rr" x="${body_yaml['rr_attachment_x']}" y="${body_yaml['rr_attachment_y']}" z="${body_yaml['rr_attachment_z']}" zrot="${body_yaml['rr_attachment_zrot']}"/>
+	<xacro:leg prefix="lf" x="${body_yaml['lf_attachment_x']}" y="${body_yaml['lf_attachment_y']}" z="${body_yaml['lf_attachment_z']}" zrot="${body_yaml['lf_attachment_zrot']}"/>
+	<xacro:leg prefix="lm" x="${body_yaml['lm_attachment_x']}" y="${body_yaml['lm_attachment_y']}" z="${body_yaml['lm_attachment_z']}" zrot="${body_yaml['lm_attachment_zrot']}"/>
+	<xacro:leg prefix="lr" x="${body_yaml['lr_attachment_x']}" y="${body_yaml['lr_attachment_y']}" z="${body_yaml['lr_attachment_z']}" zrot="${body_yaml['lr_attachment_zrot']}"/>
+	
+	<xacro:coxa prefix="rf" min_lim="${body_yaml['coxa_min_angle']}" max_lim="${body_yaml['coxa_max_angle']}"/>
+	<xacro:coxa prefix="rm" min_lim="${body_yaml['coxa_min_angle']}" max_lim="${body_yaml['coxa_max_angle']}"/>
+	<xacro:coxa prefix="rr" min_lim="${body_yaml['coxa_min_angle']}" max_lim="${body_yaml['coxa_max_angle']}"/>
+	<xacro:coxa prefix="lf" min_lim="${body_yaml['coxa_min_angle']}" max_lim="${body_yaml['coxa_max_angle']}"/>
+	<xacro:coxa prefix="lm" min_lim="${body_yaml['coxa_min_angle']}" max_lim="${body_yaml['coxa_max_angle']}"/>
+	<xacro:coxa prefix="lr" min_lim="${body_yaml['coxa_min_angle']}" max_lim="${body_yaml['coxa_max_angle']}"/>
+
+	<xacro:femur_servo prefix="rf" />
+	<xacro:femur_servo prefix="rm" />
+	<xacro:femur_servo prefix="rr" />
+	<xacro:femur_servo prefix="lf" />
+	<xacro:femur_servo prefix="lm" />
+	<xacro:femur_servo prefix="lr" />
+
+	<xacro:femur prefix="rf" min_lim="${body_yaml['femur_min_angle']}" max_lim="${body_yaml['femur_max_angle']}"/>
+	<xacro:femur prefix="rm" min_lim="${body_yaml['femur_min_angle']}" max_lim="${body_yaml['femur_max_angle']}"/>
+	<xacro:femur prefix="rr" min_lim="${body_yaml['femur_min_angle']}" max_lim="${body_yaml['femur_max_angle']}"/>
+	<xacro:femur prefix="lf" min_lim="${body_yaml['femur_min_angle']}" max_lim="${body_yaml['femur_max_angle']}"/>
+	<xacro:femur prefix="lm" min_lim="${body_yaml['femur_min_angle']}" max_lim="${body_yaml['femur_max_angle']}"/>
+	<xacro:femur prefix="lr" min_lim="${body_yaml['femur_min_angle']}" max_lim="${body_yaml['femur_max_angle']}"/>
+
+	<xacro:tibia_servo prefix="rf" min_lim="${body_yaml['tibia_min_angle']}" max_lim="${body_yaml['tibia_max_angle']}"/>
+	<xacro:tibia_servo prefix="rm" min_lim="${body_yaml['tibia_min_angle']}" max_lim="${body_yaml['tibia_max_angle']}"/>
+	<xacro:tibia_servo prefix="rr" min_lim="${body_yaml['tibia_min_angle']}" max_lim="${body_yaml['tibia_max_angle']}"/>
+	<xacro:tibia_servo prefix="lf" min_lim="${body_yaml['tibia_min_angle']}" max_lim="${body_yaml['tibia_max_angle']}"/>
+	<xacro:tibia_servo prefix="lm" min_lim="${body_yaml['tibia_min_angle']}" max_lim="${body_yaml['tibia_max_angle']}"/>
+	<xacro:tibia_servo prefix="lr" min_lim="${body_yaml['tibia_min_angle']}" max_lim="${body_yaml['tibia_max_angle']}"/>
+
+
+	<xacro:tibia prefix="rf" />
+	<xacro:tibia prefix="rm" />
+	<xacro:tibia prefix="rr" />
+	<xacro:tibia prefix="lf" />
+	<xacro:tibia prefix="lm" />
+	<xacro:tibia prefix="lr" />
+
+	<xacro:tarsus_servo prefix="rf" min_lim="${body_yaml['tarsus_min_angle']}" max_lim="${body_yaml['tarsus_max_angle']}"/>
+	<xacro:tarsus_servo prefix="rm" min_lim="${body_yaml['tarsus_min_angle']}" max_lim="${body_yaml['tarsus_max_angle']}"/>
+	<xacro:tarsus_servo prefix="rr" min_lim="${body_yaml['tarsus_min_angle']}" max_lim="${body_yaml['tarsus_max_angle']}"/>
+	<xacro:tarsus_servo prefix="lf" min_lim="${body_yaml['tarsus_min_angle']}" max_lim="${body_yaml['tarsus_max_angle']}"/>
+	<xacro:tarsus_servo prefix="lm" min_lim="${body_yaml['tarsus_min_angle']}" max_lim="${body_yaml['tarsus_max_angle']}"/>
+	<xacro:tarsus_servo prefix="lr" min_lim="${body_yaml['tarsus_min_angle']}" max_lim="${body_yaml['tarsus_max_angle']}"/>
+
+	<xacro:tarsus_alum prefix="rf" />
+	<xacro:tarsus_alum prefix="rm" />
+	<xacro:tarsus_alum prefix="rr" />
+	<xacro:tarsus_alum prefix="lf" />
+	<xacro:tarsus_alum prefix="lm" />
+	<xacro:tarsus_alum prefix="lr" />
+
+	<xacro:tarsus_rubber prefix="rf" />
+	<xacro:tarsus_rubber prefix="rm" />
+	<xacro:tarsus_rubber prefix="rr" />
+	<xacro:tarsus_rubber prefix="lf" />
+	<xacro:tarsus_rubber prefix="lm" />
+	<xacro:tarsus_rubber prefix="lr" />
+	
+
+
+	
+</robot>

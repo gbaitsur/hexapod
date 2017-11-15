@@ -1,0 +1,58 @@
+<launch>
+	<param name="robot_description" command="$(find xacro)/xacro --inorder '$(find hex_description)/urdf/hex.urdf.xacro'" />
+
+    <rosparam command="load" file="$(find hex_description)/urdf/body.yaml" />
+
+	
+
+	<node pkg="tf2_ros" type="static_transform_publisher" name="rf_coxa2_publisher" args="0 0 0 0 0 0 1 rf_coxa rf_coxa2" />
+	<node pkg="tf2_ros" type="static_transform_publisher" name="rm_coxa2_publisher" args="0 0 0 0 0 0 1 rm_coxa rm_coxa2" />
+	<node pkg="tf2_ros" type="static_transform_publisher" name="rr_coxa2_publisher" args="0 0 0 0 0 0 1 rr_coxa rr_coxa2" />
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="lf_coxa2_publisher" args="0 0 0 0 0 0 1 lf_coxa lf_coxa2" />
+	<node pkg="tf2_ros" type="static_transform_publisher" name="lm_coxa2_publisher" args="0 0 0 0 0 0 1 lm_coxa lm_coxa2" />
+	<node pkg="tf2_ros" type="static_transform_publisher" name="lr_coxa2_publisher" args="0 0 0 0 0 0 1 lr_coxa lr_coxa2" />
+
+	<node pkg="tf2_ros" type="static_transform_publisher" name="rf_tibia2_publisher" args="0 0 0 0 0 0 1 rf_tibia rf_tibia2" />
+	<node pkg="tf2_ros" type="static_transform_publisher" name="rm_tibia2_publisher" args="0 0 0 0 0 0 1 rm_tibia rm_tibia2" />
+	<node pkg="tf2_ros" type="static_transform_publisher" name="rr_tibia2_publisher" args="0 0 0 0 0 0 1 rr_tibia rr_tibia2" />
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="lf_tibia2_publisher" args="0 0 0 0 0 0 1 lf_tibia lf_tibia2" />
+	<node pkg="tf2_ros" type="static_transform_publisher" name="lm_tibia2_publisher" args="0 0 0 0 0 0 1 lm_tibia lm_tibia2" />
+	<node pkg="tf2_ros" type="static_transform_publisher" name="lr_tibia2_publisher" args="0 0 0 0 0 0 1 lr_tibia lr_tibia2" />
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="rf_tarsus2_publisher" args="0 0 0 0 0 0 1 rf_tarsus rf_tarsus2" />
+	<node pkg="tf2_ros" type="static_transform_publisher" name="rm_tarsus2_publisher" args="0 0 0 0 0 0 1 rm_tarsus rm_tarsus2" />
+	<node pkg="tf2_ros" type="static_transform_publisher" name="rr_tarsus2_publisher" args="0 0 0 0 0 0 1 rr_tarsus rr_tarsus2" />
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="lf_tarsus2_publisher" args="0 0 0 0 0 0 1 lf_tarsus lf_tarsus2" />
+	<node pkg="tf2_ros" type="static_transform_publisher" name="lm_tarsus2_publisher" args="0 0 0 0 0 0 1 lm_tarsus lm_tarsus2" />
+	<node pkg="tf2_ros" type="static_transform_publisher" name="lr_tarsus2_publisher" args="0 0 0 0 0 0 1 lr_tarsus lr_tarsus2" />
+
+	<node pkg="tf2_ros" type="static_transform_publisher" name="rf_tarsus3_publisher" args="0 0 0 0 0 0 1 rf_tarsus2 rf_tarsus3" />
+	<node pkg="tf2_ros" type="static_transform_publisher" name="rm_tarsus3_publisher" args="0 0 0 0 0 0 1 rm_tarsus2 rm_tarsus3" />
+	<node pkg="tf2_ros" type="static_transform_publisher" name="rr_tarsus3_publisher" args="0 0 0 0 0 0 1 rr_tarsus2 rr_tarsus3" />
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="lf_tarsus3_publisher" args="0 0 0 0 0 0 1 lf_tarsus2 lf_tarsus3" />
+	<node pkg="tf2_ros" type="static_transform_publisher" name="lm_tarsus3_publisher" args="0 0 0 0 0 0 1 lm_tarsus2 lm_tarsus3" />
+	<node pkg="tf2_ros" type="static_transform_publisher" name="lr_tarsus3_publisher" args="0 0 0 0 0 0 1 lr_tarsus2 lr_tarsus3" />
+
+
+
+
+
+	
+	<node name="hex_dynamixel" pkg="hex_brain" type="hex_dynamixel.py"></node>
+	<node name="hex_imu" pkg="hex_brain" type="hex_imu.py"></node>
+	
+<!--
+	<node name="hex_odom_publisher" pkg="hex_brain" type="hex_odom_publisher.py"></node>
+-->
+
+	<node name="hex_body" pkg="hex_brain" type="hex_body.py"></node>
+
+
+	<node name="rviz" pkg="rviz" type="rviz"></node>
+
+
+</launch>	
