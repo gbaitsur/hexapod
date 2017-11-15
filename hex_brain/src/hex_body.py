@@ -306,7 +306,7 @@ def run():
 
     fill_legs()
 
-
+    # test
 
     rospy.init_node('hex_body', anonymous=True)
 

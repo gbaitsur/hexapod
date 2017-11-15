@@ -53,3 +53,95 @@ tarsus_max_angle: 90
 
 neutral_foot_distance: 0.12
 neutral_clearance: 0
+
+
+rf_coxa_servo_id: 101
+rf_femur_servo_id: 102
+rf_tibia_servo_id: 103
+rf_tarsus_servo_id: 19
+
+rm_coxa_servo_id: 104
+rm_femur_servo_id: 105
+rm_tibia_servo_id: 106
+rm_tarsus_servo_id: 11
+
+rr_coxa_servo_id: 107
+rr_femur_servo_id: 108
+rr_tibia_servo_id: 109
+rr_tarsus_servo_id: 14
+
+lf_coxa_servo_id: 116
+lf_femur_servo_id: 117
+lf_tibia_servo_id: 118
+lf_tarsus_servo_id: 13
+
+lm_coxa_servo_id: 113
+lm_femur_servo_id: 114
+lm_tibia_servo_id: 115
+lm_tarsus_servo_id: 20
+
+lr_coxa_servo_id: 110
+lr_femur_servo_id: 111
+lr_tibia_servo_id: 112
+lr_tarsus_servo_id: 15
+
+
+rf_coxa_angle_offset: 0
+rf_femur_angle_offset: -70
+rf_tibia_angle_offset: 20
+rf_tarsus_angle_offset: 0
+
+rf_coxa_direction: 1
+rf_femur_direction: -1
+rf_tibia_direction: 1
+rf_tarsus_direction: -1
+
+rm_coxa_angle_offset: 0
+rm_femur_angle_offset: -70
+rm_tibia_angle_offset: 20
+rm_tarsus_angle_offset: 0
+
+rm_coxa_direction: 1
+rm_femur_direction: -1
+rm_tibia_direction: 1
+rm_tarsus_direction: -1
+
+rr_coxa_angle_offset: 0
+rr_femur_angle_offset: -70
+rr_tibia_angle_offset: 20
+rr_tarsus_angle_offset: 0
+
+rr_coxa_direction: 1
+rr_femur_direction: -1
+rr_tibia_direction: 1
+rr_tarsus_direction: -1
+
+lf_coxa_angle_offset: 0
+lf_femur_angle_offset: -70
+lf_tibia_angle_offset: 20
+lf_tarsus_angle_offset: 0
+
+lf_coxa_direction: 1
+lf_femur_direction: 1
+lf_tibia_direction: -1
+lf_tarsus_direction: 1
+
+lm_coxa_angle_offset: 45
+lm_femur_angle_offset: -70
+lm_tibia_angle_offset: 20
+lm_tarsus_angle_offset: 0
+
+lm_coxa_direction: 1
+lm_femur_direction: 1
+lm_tibia_direction: -1
+lm_tarsus_direction: 1
+
+lr_coxa_angle_offset: 0
+lr_femur_angle_offset: -70
+lr_tibia_angle_offset: 20
+lr_tarsus_angle_offset: 0
+
+lr_coxa_direction: 1
+lr_femur_direction: 1
+lr_tibia_direction: -1
+lr_tarsus_direction: 1

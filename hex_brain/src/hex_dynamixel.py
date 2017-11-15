@@ -18,6 +18,14 @@ from sensor_msgs.msg import JointState
 
 from math import radians
 
+import pypot.dynamixel
+
+
+dxl_io = pypot.dynamixel.DxlIO
+
+
+
+
 
 
 class JointAngles(object):
@@ -29,10 +37,26 @@ class JointAngles(object):
         self.tarsus_angle = tarsus_angle
 
 target_joint_angles = dict()
-current_joint_angles = dict()
+
+servo_ids = list()
+servo_offsets = list()
+servo_directions = list()
+joint_names = list()
+current_joint_angles = list()
 
 
+def prepare_servo_lists():
+    global servo_ids, joint_names
 
+
+    leg_names = ("rf", "rm", "rr", "lf", "lm", "lr")
+    segment_names = ("coxa", "femur", "tibia", "tarsus")
+    for leg_name in leg_names:
+        for segment_name in segment_names:
+            servo_ids.append(rospy.get_param(leg_name + "_" + segment_name + "_servo_id"))
+            joint_names.append (leg_name + "_" + segment_name)
+            servo_offsets.append(rospy.get_param(leg_name + "_" + segment_name + "_angle_offset"))
+            servo_directions.append(rospy.get_param(leg_name + "_" + segment_name + "_direction"))
 
 
 def got_target_joint_states(received_target_joint_states):
@@ -62,15 +86,22 @@ def fill_joint_angles():
     leg_names = ["rf", "rm", "rr", "lf", "lm", "lr"]
     for leg_name in leg_names:
         target_joint_angles[leg_name] = JointAngles(leg_name)
-        current_joint_angles[leg_name] = JointAngles(leg_name)
 
 
 def send_targets_to_dynamixels():
     return
 
 def read_dynamixels():
-    for target_angles in target_joint_angles.values():
-        current_joint_angles[target_angles.leg_name] = target_angles
+
+    global dxl_io, servo_ids, current_joint_angles
+
+    try:
+        current_joint_angles = dxl_io.get_present_position(servo_ids)
+    except Exception, e:
+        rospy.logerr(e.message)
+        return False
+
+    return True
 
 
 def publish_leg_states(publisher):
@@ -86,20 +117,19 @@ def publish_leg_states(publisher):
 
 
 def publish_joint_states(publisher):
-    leg_names = ["rf", "rm", "rr", "lf", "lm", "lr"]
+    global joint_names, current_joint_angles, servo_offsets, servo_directions
 
     current_joint_states = JointState()
 
-    for leg_name in leg_names:
-        joint_angles_list = current_joint_angles[leg_name]
-        """:type : JointAngles"""
 
-        joint_angles = [("coxa", joint_angles_list.coxa_angle), ("femur", joint_angles_list.femur_angle), ("tibia", joint_angles_list.tibia_angle), ("tarsus", joint_angles_list.tarsus_angle)]
+    for i in range(0,24):
+        joint_name = joint_names[i] + "_joint"
+        joint_angle = radians(servo_directions[i] * current_joint_angles[i] + servo_offsets[i])
 
-        for joint_angle in joint_angles:
-            joint_name = leg_name + "_" + joint_angle[0] + "_joint"
-            current_joint_states.name.append(joint_name)
-            current_joint_states.position.append(joint_angle[1])
+        # rospy.loginfo(joint_name + " " + str(servo_directions[i] * current_joint_angles[i] + servo_offsets[i]))
+
+        current_joint_states.name.append(joint_name)
+        current_joint_states.position.append(joint_angle)
 
     current_joint_states.header.stamp = rospy.Time.now()
     publisher.publish(current_joint_states)
@@ -107,12 +137,12 @@ def publish_joint_states(publisher):
 
 
 def run():
-    femur_angle = 30
-    tibia_angle = 20
-    tarsus_angle = 20
-    delta = 0.1
+    global dxl_io, servo_list
+
 
     fill_joint_angles()
+
+    prepare_servo_lists()
 
 
     rospy.init_node('hex_dynamixel', anonymous=True)
@@ -122,13 +152,24 @@ def run():
     leg_state_pub = rospy.Publisher('leg_states', LegStates, queue_size=10)
     joint_state_pub = rospy.Publisher('joint_states', JointState, queue_size=10)
 
+    ports = pypot.dynamixel.get_available_ports()
+    rospy.loginfo( "Dynamixel found on: " + str(ports))
+
+    dxl_io = pypot.dynamixel.DxlIO(ports[0], use_sync_read=True)
+
+    servo_list = dxl_io.scan()
+
+
     r = rospy.Rate(1000)
     while not rospy.is_shutdown():
-        read_dynamixels()
+        if read_dynamixels():
+            publish_joint_states(joint_state_pub)
+
+
 
         publish_leg_states(leg_state_pub)
 
-        publish_joint_states(joint_state_pub)
+
 
         r.sleep()
 
