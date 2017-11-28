@@ -9,12 +9,10 @@
 
 
 
-
-
-
-
 # -*- coding:utf-8 -*-
 import sys, os
+
+
 
 # import PyQt4 QtCore and QtGui modules
 from PyQt4.QtCore import *
@@ -26,6 +24,9 @@ import threading
 import rospy
 
 from math import degrees, atan2, sqrt, radians
+
+from std_msgs.msg import String
+from geometry_msgs.msg import Twist
 
 
 
@@ -46,6 +47,29 @@ class MainWindow(QMainWindow):
         self.ui.centralWidget.keyPressEvent = self.key_pressed
         self.ui.centralWidget.grabKeyboard()
 
+        self.ui.btn_storage.clicked.connect(self.storage_position)
+        self.ui.btn_init.clicked.connect(self.initial_position)
+
+        self.ui.btn_forward.pressed.connect(self.teleop_button_pressed)
+        self.ui.btn_back.pressed.connect(self.teleop_button_pressed)
+        self.ui.btn_left.pressed.connect(self.teleop_button_pressed)
+        self.ui.btn_right.pressed.connect(self.teleop_button_pressed)
+        self.ui.btn_ccw.pressed.connect(self.teleop_button_pressed)
+        self.ui.btn_cw.pressed.connect(self.teleop_button_pressed)
+
+        self.ui.btn_forward.released.connect(self.teleop_button_released)
+        self.ui.btn_back.released.connect(self.teleop_button_released)
+        self.ui.btn_left.released.connect(self.teleop_button_released)
+        self.ui.btn_right.released.connect(self.teleop_button_released)
+        self.ui.btn_ccw.released.connect(self.teleop_button_released)
+        self.ui.btn_cw.released.connect(self.teleop_button_released)
+
+
+        self.text_command_publisher = rospy.Publisher('pc_text_commands', String, queue_size=10)
+        self.twist_publisher = rospy.Publisher('teleop', Twist, queue_size=10)
+
+
+        self.pressed_buttons = list()
         self.pressed_keys = list()
 
         self.clearance = -10
@@ -68,6 +92,7 @@ class MainWindow(QMainWindow):
 
 
         self.check_keyboard()
+        self.send_teleop()
 
         self.setWindowTitle("hex_control")
 
@@ -301,11 +326,60 @@ class MainWindow(QMainWindow):
         self.quitting = True
 
 
+
+    def storage_position(self):
+        self.text_command_publisher.publish("storage_position")
+
+    def initial_position(self):
+        self.text_command_publisher.publish("initial_position")
+
+
+
+    def teleop_button_pressed(self):
+        self.pressed_buttons.append(self.sender())
+
+
+    def teleop_button_released(self):
+        self.pressed_buttons.remove(self.sender())
+
+    def send_teleop(self):
+        if self.quitting or rospy.is_shutdown():
+            return
+
+
+        teleop = Twist()
+
+        if self.ui.btn_forward in self.pressed_buttons:
+            teleop.linear.x = 0.01
+        elif self.ui.btn_back in self.pressed_buttons:
+            teleop.linear.x = -0.01
+
+        if self.ui.btn_right in self.pressed_buttons:
+            teleop.linear.y = -0.01
+        elif self.ui.btn_left in self.pressed_buttons:
+            teleop.linear.y = 0.01
+
+
+        if self.ui.btn_cw in self.pressed_buttons:
+            teleop.angular.z = radians(-0.01)
+        elif self.ui.btn_ccw in self.pressed_buttons:
+            teleop.angular.z = radians(0.01)
+
+        self.twist_publisher.publish(teleop)
+
+
+        self.t = threading.Timer(0.1, self.send_teleop)
+        self.t.start()
+
+
+
+
 def run():
+
+
     # create application
 
     rospy.init_node('hex_pc', anonymous=True)
-
 
 
     app = QApplication(sys.argv)

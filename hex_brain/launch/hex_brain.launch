@@ -39,21 +39,19 @@
 
 
 
-
-
 	<node name="hex_dynamixel" pkg="hex_brain" type="hex_dynamixel.py"></node>
 
-
 	<node name="hex_imu" pkg="hex_brain" type="hex_imu.py"></node>
-	
+
 <!--
-	<node name="hex_odom_publisher" pkg="hex_brain" type="hex_odom_publisher.py"></node>
--->
+	<node name="hex_odom" pkg="hex_brain" type="hex_odom.py"></node>
 
 	<node name="hex_body" pkg="hex_brain" type="hex_body.py"></node>
-
-<!--
-	<node name="rviz" pkg="rviz" type="rviz"></node>
 -->
+	<node name="rviz" pkg="rviz" type="rviz"></node>
+
+
+	<node name="hex_pc" pkg="hex_pc" type="hex_pc.py"></node>
+
 
 </launch>	

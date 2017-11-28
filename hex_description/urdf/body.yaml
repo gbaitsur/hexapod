@@ -1,3 +1,10 @@
+
+######################################################
+#
+#   LEG ATTACHMENT POINT AND ORIENTATION
+#
+######################################################
+
 lf_attachment_x: 0.18234
 lf_attachment_y: 0.104843
 lf_attachment_z: 0.048
@@ -31,10 +38,36 @@ rr_attachment_zrot: -135
 
 
 
+
+
+
+
+######################################################
+#
+#   LEG SEGMENT SIZES
+#
+######################################################
+
+
 coxa_length: 0.0428
 femur_length: 0.07
 tibia_length: 0.0675
 tarsus_length: 0.0713
+
+
+
+
+
+
+
+
+
+
+######################################################
+#
+#   ANGULAR LIMITS
+#
+######################################################
 
 
 coxa_min_angle: -35
@@ -51,9 +84,20 @@ tarsus_max_angle: 90
 
 
 
-neutral_foot_distance: 0.12
-neutral_clearance: 0
 
+
+
+
+
+
+
+
+
+######################################################
+#
+#   SERVO IDs
+#
+######################################################
 
 rf_coxa_servo_id: 101
 rf_femur_servo_id: 102
@@ -84,6 +128,16 @@ lr_coxa_servo_id: 110
 lr_femur_servo_id: 111
 lr_tibia_servo_id: 112
 lr_tarsus_servo_id: 15
+
+
+
+
+
+######################################################
+#
+#   SERVO ANGLE OFFSETS AND ROTATION DIRECTION
+#
+######################################################
 
 
 rf_coxa_angle_offset: 0
@@ -145,3 +199,69 @@ lr_coxa_direction: 1
 lr_femur_direction: 1
 lr_tibia_direction: -1
 lr_tarsus_direction: 1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+######################################################
+#
+#   STORAGE POSITION
+#
+######################################################
+
+
+storage_max_angular_velocity: 40 # how fast servos should move to storage position, degrees per second
+
+storage_rf_coxa_angle: 0
+storage_rf_femur_angle: -90
+storage_rf_tibia_angle: 0
+storage_rf_tarsus_angle: 0
+
+storage_rm_coxa_angle: 0
+storage_rm_femur_angle: -90
+storage_rm_tibia_angle: 0
+storage_rm_tarsus_angle: 0
+
+storage_rr_coxa_angle: 0
+storage_rr_femur_angle: -90
+storage_rr_tibia_angle: 0
+storage_rr_tarsus_angle: 0
+
+storage_lf_coxa_angle: 0
+storage_lf_femur_angle: -90
+storage_lf_tibia_angle: 0
+storage_lf_tarsus_angle: 0
+
+storage_lm_coxa_angle: 0
+storage_lm_femur_angle: -90
+storage_lm_tibia_angle: 0
+storage_lm_tarsus_angle: 0
+
+storage_lr_coxa_angle: 0
+storage_lr_femur_angle: -90
+storage_lr_tibia_angle: 0
+storage_lr_tarsus_angle: 0
+
+
+
+
+
+
+neutral_foot_distance: 0.12
+neutral_clearance: 0

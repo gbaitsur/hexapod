@@ -1,9 +1,14 @@
 import rospy
-from math import sin, cos, radians, degrees, acos, log10, exp, sqrt
+from math import sin, cos, radians, degrees, acos, log10, exp, sqrt, atan2
 
-from geometry_msgs.msg import PointStamped
+from geometry_msgs.msg import PointStamped, Point
 
 import tf2_geometry_msgs
+import PyKDL
+from tf2_kdl import transform_to_kdl
+
+from numpy import *
+
 
 
 def cosd(degs):
@@ -163,3 +168,64 @@ def transform_point_stamped(transform_buffer, target_frame_name, point_stamped):
                                                   point_stamped.header.frame_id, rospy.Time(0), rospy.Duration(1))
 
     return tf2_geometry_msgs.do_transform_point(point_stamped, transform)
+
+
+def transform_point(point, transform):
+    p = transform_to_kdl(transform) * PyKDL.Vector(point.x, point.y, point.z)
+    res = Point()
+    res.x = p[0]
+    res.y = p[1]
+    res.z = p[2]
+    return res
+
+
+
+
+
+# Input: expects Nx3 matrix of points
+# Returns R,t
+# R = 3x3 rotation matrix
+# t = 3x1 column vector
+
+def get_transform_from_point_clouds(points_1, points_2):
+    A = mat(points_1)
+    B = mat(points_2)
+
+
+    assert len(A) == len(B)
+
+    N = A.shape[0]  # total points
+
+    centroid_A = mean(A, axis=0)
+    centroid_B = mean(B, axis=0)
+
+    # centre the points
+    AA = A - tile(centroid_A, (N, 1))
+    BB = B - tile(centroid_B, (N, 1))
+
+    # dot is matrix multiplication for array
+    H = transpose(AA) * BB
+
+    U, S, Vt = linalg.svd(H)
+
+    R = Vt.T * U.T
+
+    # special reflection case
+    if linalg.det(R) < 0:
+        # print "Reflection detected"
+        Vt[2, :] *= -1
+        R = Vt.T * U.T
+
+    t = -R * centroid_A.T + centroid_B.T
+
+
+    x = t[0,0]
+    y = t[1,0]
+    z = t[2,0]
+
+    rx = (atan2(R[2, 1], R[2, 2]))
+    ry = (atan2(-R[2, 0], sqrt(R[2, 1] ** 2 + R[2, 2] ** 2)))
+    rz = (atan2(R[1, 0], R[0, 0]))
+
+
+    return (x,y,z),(rx,ry,rz)
