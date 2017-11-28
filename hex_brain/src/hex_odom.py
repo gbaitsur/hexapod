@@ -54,7 +54,7 @@ def gotLegStates(received_leg_states):
 def run():
     global leg_states_queue, current_odom_rotation, current_odom_translation, base_link_to_odom_translation_matrix, base_link_to_odom_rotation_matrix, base_link_to_odom_matrix
 
-    rospy.init_node('hex_odom_publisher', anonymous=True)
+    rospy.init_node('hex_odom', anonymous=True)
 
     rospy.Subscriber("leg_states", LegStates, gotLegStates)
 
