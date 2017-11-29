@@ -328,10 +328,10 @@ class MainWindow(QMainWindow):
 
 
     def storage_position(self):
-        self.text_command_publisher.publish("storage_position")
+        self.text_command_publisher.publish("standup_posture")
 
     def initial_position(self):
-        self.text_command_publisher.publish("initial_position")
+        self.text_command_publisher.publish("initial_posture")
 
 
 

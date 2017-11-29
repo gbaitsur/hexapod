@@ -221,47 +221,130 @@ lr_tarsus_direction: 1
 
 ######################################################
 #
-#   STORAGE POSITION
+#   STORAGE POSTURE
 #
 ######################################################
 
 
-storage_max_angular_velocity: 40 # how fast servos should move to storage position, degrees per second
+posture_storage_type: angles
 
-storage_rf_coxa_angle: 0
-storage_rf_femur_angle: -90
-storage_rf_tibia_angle: 0
-storage_rf_tarsus_angle: 0
+posture_storage_angular_velocity: 40 # how fast servos should move to posture, degrees per second
 
-storage_rm_coxa_angle: 0
-storage_rm_femur_angle: -90
-storage_rm_tibia_angle: 0
-storage_rm_tarsus_angle: 0
+posture_storage_rf_coxa_angle: 0
+posture_storage_rf_femur_angle: -90
+posture_storage_rf_tibia_angle: 0
+posture_storage_rf_tarsus_angle: 0
 
-storage_rr_coxa_angle: 0
-storage_rr_femur_angle: -90
-storage_rr_tibia_angle: 0
-storage_rr_tarsus_angle: 0
+posture_storage_rm_coxa_angle: 0
+posture_storage_rm_femur_angle: -90
+posture_storage_rm_tibia_angle: 0
+posture_storage_rm_tarsus_angle: 0
 
-storage_lf_coxa_angle: 0
-storage_lf_femur_angle: -90
-storage_lf_tibia_angle: 0
-storage_lf_tarsus_angle: 0
+posture_storage_rr_coxa_angle: 0
+posture_storage_rr_femur_angle: -90
+posture_storage_rr_tibia_angle: 0
+posture_storage_rr_tarsus_angle: 0
 
-storage_lm_coxa_angle: 0
-storage_lm_femur_angle: -90
-storage_lm_tibia_angle: 0
-storage_lm_tarsus_angle: 0
+posture_storage_lf_coxa_angle: 0
+posture_storage_lf_femur_angle: -90
+posture_storage_lf_tibia_angle: 0
+posture_storage_lf_tarsus_angle: 0
 
-storage_lr_coxa_angle: 0
-storage_lr_femur_angle: -90
-storage_lr_tibia_angle: 0
-storage_lr_tarsus_angle: 0
+posture_storage_lm_coxa_angle: 0
+posture_storage_lm_femur_angle: -90
+posture_storage_lm_tibia_angle: 0
+posture_storage_lm_tarsus_angle: 0
 
-
-
-
+posture_storage_lr_coxa_angle: 0
+posture_storage_lr_femur_angle: -90
+posture_storage_lr_tibia_angle: 0
+posture_storage_lr_tarsus_angle: 0
 
 
-neutral_foot_distance: 0.12
-neutral_clearance: 0
+
+
+######################################################
+#
+#   INITIAL POSTURE
+#
+######################################################
+
+
+posture_initial_type: foot_positions
+
+posture_initial_angular_velocity: 50 # how fast servos should move to posture, degrees per second
+
+posture_initial_rf_frame: rf
+posture_initial_rf_x: 0.14
+posture_initial_rf_y: 0
+posture_initial_rf_z: -0.048
+
+posture_initial_rm_frame: rm
+posture_initial_rm_x: 0.14
+posture_initial_rm_y: 0
+posture_initial_rm_z: -0.048
+
+posture_initial_rr_frame: rr
+posture_initial_rr_x: 0.14
+posture_initial_rr_y: 0
+posture_initial_rr_z: -0.048
+
+posture_initial_lf_frame: lf
+posture_initial_lf_x: 0.14
+posture_initial_lf_y: 0
+posture_initial_lf_z: -0.048
+
+posture_initial_lm_frame: lm
+posture_initial_lm_x: 0.14
+posture_initial_lm_y: 0
+posture_initial_lm_z: -0.048
+
+posture_initial_lr_frame: lr
+posture_initial_lr_x: 0.14
+posture_initial_lr_y: 0
+posture_initial_lr_z: -0.048
+
+
+
+
+######################################################
+#
+#   STANDUP POSTURE
+#
+######################################################
+
+
+posture_standup_type: foot_positions
+
+posture_standup_angular_velocity: 50 # how fast servos should move to posture, degrees per second
+
+posture_standup_rf_frame: rf
+posture_standup_rf_x: 0.14
+posture_standup_rf_y: 0
+posture_standup_rf_z: -0.12
+
+posture_standup_rm_frame: rm
+posture_standup_rm_x: 0.14
+posture_standup_rm_y: 0
+posture_standup_rm_z: -0.12
+
+posture_standup_rr_frame: rr
+posture_standup_rr_x: 0.14
+posture_standup_rr_y: 0
+posture_standup_rr_z: -0.12
+
+posture_standup_lf_frame: lf
+posture_standup_lf_x: 0.14
+posture_standup_lf_y: 0
+posture_standup_lf_z: -0.078
+
+posture_standup_lm_frame: lm
+posture_standup_lm_x: 0.14
+posture_standup_lm_y: 0
+posture_standup_lm_z: -0.078
+
+posture_standup_lr_frame: lr
+posture_standup_lr_x: 0.14
+posture_standup_lr_y: 0
+posture_standup_lr_z: -0.078
+

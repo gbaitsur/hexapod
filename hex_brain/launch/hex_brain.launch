@@ -43,11 +43,11 @@
 
 	<node name="hex_imu" pkg="hex_brain" type="hex_imu.py"></node>
 
-<!--
+
 	<node name="hex_odom" pkg="hex_brain" type="hex_odom.py"></node>
 
 	<node name="hex_body" pkg="hex_brain" type="hex_body.py"></node>
--->
+
 	<node name="rviz" pkg="rviz" type="rviz"></node>
 
 

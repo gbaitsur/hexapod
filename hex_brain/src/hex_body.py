@@ -1,27 +1,26 @@
 #!/usr/bin/env python
 
 # gets body parameters from robot_description on parameter server
-# subscribes to [joint_states] and updates legs to store latest joint angles
-# publishes tf based on data in legs
+# subscribes to [joint_states] and updates Leg objects to store latest joint angles
+# publishes tf based on data in Legs
 
 
-# calculates joint angles to reach target foot position
+# calculates joint angles to reach target foot position - defines posture by setting posture_target_angles in Leg objects
+# during each cycle, calculate target angles to send to dynamixels for smooth movement towards target posture
 
 
-
-import rospy
-from sensor_msgs.msg import JointState
-import tf2_ros
-
-from math import radians, degrees, atan2, sqrt
-from geometry_msgs.msg import PointStamped, TransformStamped, Twist
-from hex_utility import angle_ab, angle_ac, third_side, get_point, distance_between, transform_point_stamped
-
-from tf_conversions import transformations
-
-from std_msgs.msg import String
 
 import copy
+from math import atan2, degrees, radians, sqrt
+
+import rospy
+import tf2_ros
+from geometry_msgs.msg import PointStamped, TransformStamped, Twist
+from sensor_msgs.msg import JointState
+from std_msgs.msg import String
+from tf_conversions import transformations
+
+from hex_utility import angle_ab, angle_ac, distance_between, get_point, third_side, transform_point_stamped
 
 
 class Body(object):
@@ -43,7 +42,7 @@ class Body(object):
                 self.min_angle = rospy.get_param(name + "_min_angle")
                 self.max_angle = rospy.get_param(name + "_max_angle")
 
-                self.max_angular_velocity = 0
+                self.angular_velocity = 0
 
         def __init__(self, name):
             self.name = name
@@ -59,9 +58,13 @@ class Body(object):
             for segment_name in segment_names:
                 self.segments[segment_name[0]] = Body.Leg.Segment(segment_name[0], self.segments[segment_name[1]])
 
+
+
         @property
         def attachment_xyz(self):
             return self.attachment_x, self.attachment_y, self.attachment_z
+
+
 
         def calc_joint_angles(self, target_point, best_effort, tf_buffer):
 
@@ -183,13 +186,11 @@ class Body(object):
                 else:
                     raise Exception(self.name + " tarsus angle too high")
 
-
             angles = dict()
             angles["coxa"] = angle_coxa
             angles["femur"] = angle_femur
             angles["tibia"] = angle_tibia
             angles["tarsus"] = angle_tarsus
-
 
             return angles
 
@@ -202,28 +203,30 @@ class Body(object):
 
         self.prev_assume_posture_call_time = None
 
-    def define_posture(self, posture_descriptor, tf_buffer = None):
+
+
+    def define_posture(self, posture_descriptor, tf_buffer=None):
         # posture_descriptor may be:
-        # String -- to use pre-defined posture from config file
+        # String -- to use pre-defined posture from config file: may be defined by exact joint angles or by foot positions in each foot's frame
         #
         #
         # list type #1 -- to set specific joint angles:
-        # (leg_name, list((segment_name, angle, max_angular_velocity)))
+        # (leg_name, list((segment_name, angle, angular_velocity)))
         #
         # posture_descriptor = list()
         # for leg in body.legs.values():
         #     segment_postures = list()
         #     for segment in leg.segments.values():
         #         angle = _DEGREES_
-        #         max_angular_velocity = _DEGREES_PER_SECOND_
-        #         segment_postures.append((segment.name, angle, max_angular_velocity))
+        #         angular_velocity = _DEGREES_PER_SECOND_
+        #         segment_postures.append((segment.name, angle, angular_velocity))
         #     posture_descriptor.append((leg.name, segment_postures))
         #
         #
         #
         #
         # list type #2 -- to move feet to specific positions:
-        # (leg_name, target_point, optional, may be None-> list(segment_name, max_angular_velocity))
+        # (leg_name, target_point, optional, may be None-> list(segment_name, angular_velocity))
         #
         # if type #2 is used -- tf_buffer is necessary
         #
@@ -233,16 +236,43 @@ class Body(object):
         if isinstance(posture_descriptor, basestring):
             # use pre-defined posture from config file
 
+            # see what type of posture definition that is
+            definition_type = rospy.get_param("posture_" + posture_descriptor + "_type")
+
+            angular_velocity = rospy.get_param("posture_" + posture_descriptor + "_angular_velocity")
+
             leg_names = ["rf", "rm", "rr", "lf", "lm", "lr"]
             segment_names = ["coxa", "femur", "tibia", "tarsus"]
             for leg_name in leg_names:
+                leg = self.legs[leg_name]
+
+                if definition_type == "foot_positions":
+                    point_frame = rospy.get_param("posture_" + posture_descriptor + "_" + leg_name + "_frame")
+                    point_x = rospy.get_param("posture_" + posture_descriptor + "_" + leg_name + "_x")
+                    point_y = rospy.get_param("posture_" + posture_descriptor + "_" + leg_name + "_y")
+                    point_z = rospy.get_param("posture_" + posture_descriptor + "_" + leg_name + "_z")
+
+                    target_point = get_point(point_frame, point_x, point_y, point_z)
+                    joint_angles = leg.calc_joint_angles(target_point, False, tf_buffer)
+
+
                 for segment_name in segment_names:
-                    leg = self.legs[leg_name]
                     segment = leg.segments[segment_name]
 
-                    segment.max_angular_velocity = rospy.get_param(posture_descriptor + "_max_angular_velocity")
-                    segment.posture_target_angle = rospy.get_param(
-                        posture_descriptor + "_" + leg_name + "_" + segment_name + "_angle")
+                    if definition_type == "angles":
+                        segment.angular_velocity = angular_velocity
+                        segment.posture_target_angle = rospy.get_param(
+                            posture_descriptor + "_" + leg_name + "_" + segment_name + "_angle")
+
+                    elif definition_type == "foot_positions":
+                        segment.angular_velocity = angular_velocity
+
+                        for segment_name in joint_angles.keys():
+                            segment = leg.segments[segment_name]
+                            segment.posture_target_angle = joint_angles[segment_name]
+
+
+
 
         elif isinstance(posture_descriptor, list):
             for leg_item in posture_descriptor:
@@ -254,12 +284,11 @@ class Body(object):
                     for segment_item in leg_item[1]:
                         segment_name = segment_item[0]
                         posture_target_angle = segment_item[1]
-                        max_angular_velocity = segment_item[2]
-
+                        angular_velocity = segment_item[2]
 
                         segment = leg.segments[segment_name]
                         segment.posture_target_angle = posture_target_angle
-                        segment.max_angular_velocity = max_angular_velocity
+                        segment.angular_velocity = angular_velocity
 
 
                 elif isinstance(leg_item[1], PointStamped):
@@ -271,14 +300,15 @@ class Body(object):
                     if leg_item[2] != None:
                         for segment_item in leg_item[2]:
                             segment_name = segment_item[0]
-                            max_angular_velocity = segment_item[1]
+                            angular_velocity = segment_item[1]
 
                             segment = leg.segments[segment_name]
-                            segment.max_angular_velocity = max_angular_velocity
+                            segment.angular_velocity = angular_velocity
 
                     for segment_name in joint_angles.keys():
                         segment = leg.segments[segment_name]
                         segment.posture_target_angle = joint_angles[segment_name]
+
 
 
     def assume_posture(self):
@@ -297,7 +327,7 @@ class Body(object):
                 leg = self.legs[leg_name]
                 segment = leg.segments[segment_name]
 
-                degs_per_cycle = segment.max_angular_velocity * cycle_duration
+                degs_per_cycle = segment.angular_velocity * cycle_duration
 
                 dir = 1
                 if segment.current_angle > segment.posture_target_angle:
@@ -308,7 +338,6 @@ class Body(object):
 
                 if abs(segment.current_angle - segment.posture_target_angle) > 0.5:
                     in_posture = False
-
 
         self.prev_assume_posture_call_time = rospy.get_time()
 
@@ -325,57 +354,43 @@ tf_buffer = None
 def got_text_command(text_command):
     global tf_buffer
 
+    if text_command.data == "storage_posture":
+        body.define_posture("storage")
 
-    if text_command.data == "storage_position":
-        # body.define_posture("storage")
-
-        posture_descriptor = list()
-        for leg in body.legs:
-
-            for leg in body.legs.values():
-                if leg.name == "rf":
-                    target_point = get_point(leg.name, 0.14, 0, -leg.attachment_z-0.03)
-                elif leg.name == "rm":
-                    target_point = get_point(leg.name, 0.14, 0, -leg.attachment_z - 0.03)
-                elif leg.name == "rr":
-                    target_point = get_point(leg.name, 0.14, 0, -leg.attachment_z - 0.03)
-                elif leg.name == "lf":
-                    target_point = get_point(leg.name, 0.14, 0, -leg.attachment_z - 0.05)
-                elif leg.name == "lm":
-                    target_point = get_point(leg.name, 0.14, 0, -leg.attachment_z - 0.05)
-                elif leg.name == "lr":
-                    target_point = get_point(leg.name, 0.14, 0, -leg.attachment_z - 0.05)
-
+    elif text_command.data == "standup_posture":
+        body.define_posture("standup", tf_buffer=tf_buffer)
+        # posture_descriptor = list()
+        # for leg in body.legs:
+        #
+        #     for leg in body.legs.values():
+        #         target_point = get_point(leg.name, 0.14, 0, -leg.attachment_z-0.05)
+        #
+        #         segment_velocities = list()
+        #         for segment in leg.segments.values():
+        #             angular_velocity = 50
+        #             segment_velocities.append((segment.name, angular_velocity))
+        #
+        #         posture_descriptor.append((leg.name, target_point, segment_velocities))
+        #
+        # body.define_posture(posture_descriptor, tf_buffer)
 
 
-
-                segment_velocities = list()
-                for segment in leg.segments.values():
-                    max_angular_velocity = 50
-                    segment_velocities.append((segment.name, max_angular_velocity))
-
-                posture_descriptor.append((leg.name, target_point, segment_velocities))
-
-        body.define_posture(posture_descriptor, tf_buffer)
-
-
-    elif text_command.data == "initial_position":
-        posture_descriptor = list()
-        for leg in body.legs:
-
-            for leg in body.legs.values():
-                target_point = get_point(leg.name, 0.14, 0, -leg.attachment_z)
-
-                segment_velocities = list()
-                for segment in leg.segments.values():
-                    max_angular_velocity = 50
-                    segment_velocities.append((segment.name, max_angular_velocity))
-
-                posture_descriptor.append((leg.name, target_point, segment_velocities))
-
-        body.define_posture(posture_descriptor, tf_buffer)
-
-
+    elif text_command.data == "initial_posture":
+        body.define_posture("initial", tf_buffer=tf_buffer)
+        # posture_descriptor = list()
+        # for leg in body.legs:
+        #
+        #     for leg in body.legs.values():
+        #         target_point = get_point(leg.name, 0.14, 0, -leg.attachment_z)
+        #
+        #         segment_velocities = list()
+        #         for segment in leg.segments.values():
+        #             angular_velocity = 50
+        #             segment_velocities.append((segment.name, angular_velocity))
+        #
+        #         posture_descriptor.append((leg.name, target_point, segment_velocities))
+        #
+        # body.define_posture(posture_descriptor, tf_buffer)
 
 
 def got_joint_states(received_joint_states):
@@ -440,9 +455,6 @@ def got_joint_states(received_joint_states):
     transform_broadcaster.sendTransform(t_batch)
 
 
-
-
-
 def publish_target_joint_states(target_joint_state_pub):
     global body
 
@@ -471,19 +483,14 @@ def publish_target_joint_states(target_joint_state_pub):
     target_joint_state_pub.publish(target_joint_states)
 
 
-
 def got_teleop(received_teleop):
-
     #     redefine task coordinate systems (TCS) for each leg
     #     store latest teleop locally
     pass
 
 
-
 def publish_static_tf():
-
     static_transform_broadcaster = tf2_ros.StaticTransformBroadcaster()
-
 
     t_batch = []
     for leg in body.legs.values():
@@ -505,7 +512,6 @@ def publish_static_tf():
     static_transform_broadcaster.sendTransform(t_batch)
 
 
-
 def run():
     global transform_broadcaster, body, tf_buffer
 
@@ -524,11 +530,7 @@ def run():
 
     rospy.Subscriber("teleop", Twist, got_teleop)
 
-
     publish_static_tf()
-
-
-
 
     cycle_frequency = 100
     cycle_rate = rospy.Rate(cycle_frequency)
