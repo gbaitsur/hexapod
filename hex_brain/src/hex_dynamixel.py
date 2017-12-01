@@ -147,9 +147,15 @@ def publish_leg_states(publisher):
     for i in range(0, 6):
         in_stance = True
         if not hex_robot == None:
-            if loads[i] > avg * 0.9:
+            if loads[i] > avg * 0.6:
                 in_stance = False
         current_leg_states.stance_legs.append(in_stance)
+
+        if hex_robot._controllers[0].io is not None:
+            if in_stance:
+                hex_robot._controllers[0].io.switch_led_on([hex_robot.femur[i].id])
+            else:
+                hex_robot._controllers[0].io.switch_led_off([hex_robot.femur[i].id])
 
     publisher.publish(current_leg_states)
 

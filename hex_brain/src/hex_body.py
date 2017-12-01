@@ -6,6 +6,8 @@
 
 # subscribes to [pc_text_commands]
 
+# publishes [posture_control_rate] = frequency at which target angles are published
+
 
 # calculates joint angles to reach target foot position - defines posture by setting posture_target_angles in Leg objects
 # during each cycle, calculate target angles to send to dynamixels for smooth movement towards target posture
@@ -17,9 +19,9 @@ from math import atan2, degrees, radians, sqrt
 
 import rospy
 import tf2_ros
-from geometry_msgs.msg import PointStamped, TransformStamped, Twist
+from geometry_msgs.msg import PointStamped, TransformStamped
 from sensor_msgs.msg import JointState
-from std_msgs.msg import String
+from std_msgs.msg import String, Float32
 from tf_conversions import transformations
 
 from hex_utility import angle_ab, angle_ac, distance_between, get_point, third_side, transform_point_stamped
@@ -484,11 +486,6 @@ def publish_target_joint_states(target_joint_state_pub):
     target_joint_state_pub.publish(target_joint_states)
 
 
-def got_teleop(received_teleop):
-    #     redefine task coordinate systems (TCS) for each leg
-    #     store latest teleop locally
-    pass
-
 
 def publish_static_tf():
     static_transform_broadcaster = tf2_ros.StaticTransformBroadcaster()
@@ -540,15 +537,17 @@ def run():
 
     rospy.Subscriber("pc_text_commands", String, got_text_command)
 
-    rospy.Subscriber("teleop", Twist, got_teleop)
 
     rospy.Subscriber("leg_states", LegStates, gotLegStates)
+
+    posture_control_rate_pub = rospy.Publisher('posture_control_rate', Float32, queue_size=1)
 
     publish_static_tf()
 
 
 
-
+    actual_cycle_durations  = list([0,0,0,0,0])
+    prev_time = rospy.Time.now()
 
     cycle_frequency = 100
     cycle_rate = rospy.Rate(cycle_frequency)
@@ -556,6 +555,16 @@ def run():
         body.assume_posture()
 
         publish_target_joint_states(target_joint_state_pub)
+
+        current_duration = (rospy.Time.now() - prev_time).to_sec()
+        actual_cycle_durations.pop(0)
+        actual_cycle_durations.append(current_duration)
+
+        avg_cycle_duration = sum(actual_cycle_durations) / float(len(actual_cycle_durations))
+        prev_time = rospy.Time.now()
+
+        posture_control_rate_pub.publish(1/avg_cycle_duration)
+
 
         cycle_rate.sleep()
 

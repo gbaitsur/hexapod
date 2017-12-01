@@ -26,7 +26,7 @@ import rospy
 from math import degrees, atan2, sqrt, radians
 
 from std_msgs.msg import String
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import TwistStamped
 
 
 
@@ -63,6 +63,12 @@ class MainWindow(QMainWindow):
         self.ui.btn_right.pressed.connect(self.teleop_button_pressed)
         self.ui.btn_ccw.pressed.connect(self.teleop_button_pressed)
         self.ui.btn_cw.pressed.connect(self.teleop_button_pressed)
+        self.ui.btn_up.pressed.connect(self.teleop_button_pressed)
+        self.ui.btn_down.pressed.connect(self.teleop_button_pressed)
+        self.ui.btn_roll_left.pressed.connect(self.teleop_button_pressed)
+        self.ui.btn_roll_right.pressed.connect(self.teleop_button_pressed)
+        self.ui.btn_pitch_up.pressed.connect(self.teleop_button_pressed)
+        self.ui.btn_pitch_down.pressed.connect(self.teleop_button_pressed)
 
         self.ui.btn_forward.released.connect(self.teleop_button_released)
         self.ui.btn_back.released.connect(self.teleop_button_released)
@@ -70,11 +76,16 @@ class MainWindow(QMainWindow):
         self.ui.btn_right.released.connect(self.teleop_button_released)
         self.ui.btn_ccw.released.connect(self.teleop_button_released)
         self.ui.btn_cw.released.connect(self.teleop_button_released)
-
+        self.ui.btn_up.released.connect(self.teleop_button_released)
+        self.ui.btn_down.released.connect(self.teleop_button_released)
+        self.ui.btn_roll_left.released.connect(self.teleop_button_released)
+        self.ui.btn_roll_right.released.connect(self.teleop_button_released)
+        self.ui.btn_pitch_up.released.connect(self.teleop_button_released)
+        self.ui.btn_pitch_down.released.connect(self.teleop_button_released)
 
 
         self.text_command_publisher = rospy.Publisher('pc_text_commands', String, queue_size=10)
-        self.twist_publisher = rospy.Publisher('teleop', Twist, queue_size=10)
+        self.twist_publisher = rospy.Publisher('teleop', TwistStamped, queue_size=10)
 
 
         self.pressed_buttons = list()
@@ -368,23 +379,39 @@ class MainWindow(QMainWindow):
             return
 
 
-        teleop = Twist()
+        teleop = TwistStamped()
+        teleop.header.stamp = rospy.Time.now()
 
         if self.ui.btn_forward in self.pressed_buttons:
-            teleop.linear.x = 0.01
+            teleop.twist.linear.x = 1
         elif self.ui.btn_back in self.pressed_buttons:
-            teleop.linear.x = -0.01
+            teleop.twist.linear.x = -1
 
         if self.ui.btn_right in self.pressed_buttons:
-            teleop.linear.y = -0.01
+            teleop.twist.linear.y = -1
         elif self.ui.btn_left in self.pressed_buttons:
-            teleop.linear.y = 0.01
+            teleop.twist.linear.y = 1
+
+        if self.ui.btn_up in self.pressed_buttons:
+            teleop.twist.linear.z = 1
+        elif self.ui.btn_down in self.pressed_buttons:
+            teleop.twist.linear.z = -1
 
 
         if self.ui.btn_cw in self.pressed_buttons:
-            teleop.angular.z = radians(-0.01)
+            teleop.twist.angular.z = radians(-20)
         elif self.ui.btn_ccw in self.pressed_buttons:
-            teleop.angular.z = radians(0.01)
+            teleop.twist.angular.z = radians(20)
+
+        if self.ui.btn_roll_right in self.pressed_buttons:
+            teleop.twist.angular.x = radians(-20)
+        elif self.ui.btn_roll_left in self.pressed_buttons:
+            teleop.twist.angular.x = radians(20)
+
+        if self.ui.btn_pitch_up in self.pressed_buttons:
+            teleop.twist.angular.y = radians(-20)
+        elif self.ui.btn_pitch_down in self.pressed_buttons:
+            teleop.twist.angular.y = radians(20)
 
         self.twist_publisher.publish(teleop)
 

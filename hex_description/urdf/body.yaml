@@ -242,8 +242,30 @@ lr_tarsus_direction: 1
 
 
 
+######################################################
+#
+#   WORKSPACE CENTER DEFINITION
+#
+######################################################
 
 
+rf_center_x: 0.14
+rf_center_y: 0
+
+rm_center_x: 0.14
+rm_center_y: 0
+
+rr_center_x: 0.14
+rr_center_y: 0
+
+lf_center_x: 0.14
+lf_center_y: 0
+
+lm_center_x: 0.14
+lm_center_y: 0
+
+lr_center_x: 0.14
+lr_center_y: 0
 
 
 

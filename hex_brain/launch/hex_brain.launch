@@ -49,7 +49,12 @@
 
 	<node name="hex_body" pkg="hex_brain" type="hex_body.py"></node>
 
+	<node name="hex_tcs" pkg="hex_brain" type="hex_tcs.py"></node>
+
+
+
 	<node name="rviz" pkg="rviz" type="rviz"></node>
+
 
 
 	<node name="hex_pc" pkg="hex_pc" type="hex_pc.py"></node>
