@@ -3,6 +3,7 @@
 
 
 # subscribes to [leg_states] -- indicates which legs are in stance at a given time
+# subscribes to [pc_text_commands]
 
 # calculates change of pose based on stance legs movements
 # publishes tf for odom->base_link and odom->base_link_flat (base_link_flat = base_link without pitch and roll)
@@ -21,10 +22,24 @@ from geometry_msgs.msg import Point, Pose, Quaternion, TransformStamped, Twist, 
 from hex_msg.msg import LegStates
 from nav_msgs.msg import Odometry
 from tf_conversions import transformations
+from std_msgs.msg import String
 
 from hex_utility import get_transform_from_point_clouds, transform_point
 
 leg_states_queue = list()
+
+current_odom_translation = [0, 0, 0]
+current_odom_rotation = transformations.quaternion_from_euler(0, 0, 0)
+prev_stance_feet_positions = list(itertools.repeat(None, 6))
+
+
+def got_text_command(text_command):
+    global current_odom_translation, current_odom_rotation, prev_stance_feet_positions
+
+    if text_command.data == "reset_ground_level":
+        current_odom_translation = [0, 0, 0]
+        current_odom_rotation = transformations.quaternion_from_euler(0, 0, 0)
+        prev_stance_feet_positions = list(itertools.repeat(None, 6))
 
 
 def gotLegStates(received_leg_states):
@@ -117,11 +132,13 @@ def broadcast_tf(current_odom_translation, current_odom_rotation, tf_broadcaster
 
 
 def run():
-    global leg_states_queue
+    global leg_states_queue, current_odom_translation, current_odom_rotation, prev_stance_feet_positions
 
     rospy.init_node('hex_odom', anonymous=True)
 
     rospy.Subscriber("leg_states", LegStates, gotLegStates)
+
+    rospy.Subscriber("pc_text_commands", String, got_text_command)
 
     tf_buffer = tf2_ros.Buffer()
     tf_listener = tf2_ros.TransformListener(tf_buffer)
@@ -130,14 +147,13 @@ def run():
 
     odom_pub = rospy.Publisher("odom", Odometry, queue_size=10)
 
-    current_odom_translation = [0, 0, 0]
-    current_odom_rotation = transformations.quaternion_from_euler(0, 0, 0)
+
     broadcast_tf(current_odom_translation, current_odom_rotation, tf_broadcaster, rospy.Time.now())
 
 
 
 
-    prev_stance_feet_positions = list(itertools.repeat(None, 6))
+
 
     leg_names = ["rf", "rm", "rr", "lf", "lm", "lr"]
 

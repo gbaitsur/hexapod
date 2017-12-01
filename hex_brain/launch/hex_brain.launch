@@ -41,6 +41,7 @@
 
 	<node name="hex_dynamixel" pkg="hex_brain" type="hex_dynamixel.py"></node>
 
+
 	<node name="hex_imu" pkg="hex_brain" type="hex_imu.py"></node>
 
 

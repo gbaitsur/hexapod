@@ -47,8 +47,15 @@ class MainWindow(QMainWindow):
         self.ui.centralWidget.keyPressEvent = self.key_pressed
         self.ui.centralWidget.grabKeyboard()
 
-        self.ui.btn_storage.clicked.connect(self.storage_position)
-        self.ui.btn_init.clicked.connect(self.initial_position)
+        self.ui.btn_turn_on.clicked.connect(self.btn_click)
+        self.ui.btn_turn_off.clicked.connect(self.btn_click)
+
+        self.ui.btn_up.clicked.connect(self.btn_click)
+        self.ui.btn_down.clicked.connect(self.btn_click)
+
+        self.ui.btn_reset_ground_level.clicked.connect(self.btn_click)
+
+
 
         self.ui.btn_forward.pressed.connect(self.teleop_button_pressed)
         self.ui.btn_back.pressed.connect(self.teleop_button_pressed)
@@ -63,6 +70,7 @@ class MainWindow(QMainWindow):
         self.ui.btn_right.released.connect(self.teleop_button_released)
         self.ui.btn_ccw.released.connect(self.teleop_button_released)
         self.ui.btn_cw.released.connect(self.teleop_button_released)
+
 
 
         self.text_command_publisher = rospy.Publisher('pc_text_commands', String, queue_size=10)
@@ -327,11 +335,24 @@ class MainWindow(QMainWindow):
 
 
 
-    def storage_position(self):
-        self.text_command_publisher.publish("standup_posture")
+    def btn_click(self):
 
-    def initial_position(self):
-        self.text_command_publisher.publish("initial_posture")
+        if self.sender() == self.ui.btn_turn_on:
+            self.text_command_publisher.publish("turn_on")
+
+        elif self.sender() == self.ui.btn_turn_off:
+            self.text_command_publisher.publish("turn_off")
+
+        elif self.sender() == self.ui.btn_up:
+            self.text_command_publisher.publish("standup")
+
+        elif self.sender() == self.ui.btn_down:
+            self.text_command_publisher.publish("initial")
+
+        elif self.sender() == self.ui.btn_reset_ground_level:
+            self.text_command_publisher.publish("reset_ground_level")
+
+
 
 
 

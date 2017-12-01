@@ -1,3 +1,26 @@
+######################################################
+#
+#   LEG AND SEGMENT NAMES
+#
+######################################################
+
+leg_names:
+          - rf
+          - rm
+          - rr
+          - lf
+          - lm
+          - lr
+
+segment_names:
+          - coxa
+          - femur
+          - tibia
+          - tarsus
+
+
+
+
 
 ######################################################
 #
@@ -93,6 +116,7 @@ tarsus_max_angle: 90
 
 
 
+
 ######################################################
 #
 #   SERVO IDs
@@ -131,6 +155,17 @@ lr_tarsus_servo_id: 15
 
 
 
+######################################################
+#
+#   SERVO TYPES
+#
+######################################################
+
+coxa_servo_type: MX-64
+femur_servo_type: MX-64
+tibia_servo_type: MX-64
+tarsus_servo_type: AX-18
+
 
 
 ######################################################
@@ -141,8 +176,8 @@ lr_tarsus_servo_id: 15
 
 
 rf_coxa_angle_offset: 0
-rf_femur_angle_offset: -70
-rf_tibia_angle_offset: 20
+rf_femur_angle_offset: 70
+rf_tibia_angle_offset: -20
 rf_tarsus_angle_offset: 0
 
 rf_coxa_direction: 1
@@ -151,8 +186,8 @@ rf_tibia_direction: 1
 rf_tarsus_direction: -1
 
 rm_coxa_angle_offset: 0
-rm_femur_angle_offset: -70
-rm_tibia_angle_offset: 20
+rm_femur_angle_offset: 70
+rm_tibia_angle_offset: -20
 rm_tarsus_angle_offset: 0
 
 rm_coxa_direction: 1
@@ -161,8 +196,8 @@ rm_tibia_direction: 1
 rm_tarsus_direction: -1
 
 rr_coxa_angle_offset: 0
-rr_femur_angle_offset: -70
-rr_tibia_angle_offset: 20
+rr_femur_angle_offset: 70
+rr_tibia_angle_offset: -20
 rr_tarsus_angle_offset: 0
 
 rr_coxa_direction: 1
@@ -171,8 +206,8 @@ rr_tibia_direction: 1
 rr_tarsus_direction: -1
 
 lf_coxa_angle_offset: 0
-lf_femur_angle_offset: -70
-lf_tibia_angle_offset: 20
+lf_femur_angle_offset: 70
+lf_tibia_angle_offset: -20
 lf_tarsus_angle_offset: 0
 
 lf_coxa_direction: 1
@@ -180,9 +215,9 @@ lf_femur_direction: 1
 lf_tibia_direction: -1
 lf_tarsus_direction: 1
 
-lm_coxa_angle_offset: 45
-lm_femur_angle_offset: -70
-lm_tibia_angle_offset: 20
+lm_coxa_angle_offset: -45
+lm_femur_angle_offset: 70
+lm_tibia_angle_offset: -20
 lm_tarsus_angle_offset: 0
 
 lm_coxa_direction: 1
@@ -191,8 +226,8 @@ lm_tibia_direction: -1
 lm_tarsus_direction: 1
 
 lr_coxa_angle_offset: 0
-lr_femur_angle_offset: -70
-lr_tibia_angle_offset: 20
+lr_femur_angle_offset: 70
+lr_tibia_angle_offset: -20
 lr_tarsus_angle_offset: 0
 
 lr_coxa_direction: 1
@@ -272,7 +307,7 @@ posture_storage_lr_tarsus_angle: 0
 
 posture_initial_type: foot_positions
 
-posture_initial_angular_velocity: 50 # how fast servos should move to posture, degrees per second
+posture_initial_angular_velocity: 30 # how fast servos should move to posture, degrees per second
 
 posture_initial_rf_frame: rf
 posture_initial_rf_x: 0.14
@@ -316,22 +351,22 @@ posture_initial_lr_z: -0.048
 
 posture_standup_type: foot_positions
 
-posture_standup_angular_velocity: 50 # how fast servos should move to posture, degrees per second
+posture_standup_angular_velocity: 100 # how fast servos should move to posture, degrees per second
 
 posture_standup_rf_frame: rf
 posture_standup_rf_x: 0.14
 posture_standup_rf_y: 0
-posture_standup_rf_z: -0.12
+posture_standup_rf_z: -0.078
 
 posture_standup_rm_frame: rm
 posture_standup_rm_x: 0.14
 posture_standup_rm_y: 0
-posture_standup_rm_z: -0.12
+posture_standup_rm_z: -0.078
 
 posture_standup_rr_frame: rr
 posture_standup_rr_x: 0.14
 posture_standup_rr_y: 0
-posture_standup_rr_z: -0.12
+posture_standup_rr_z: -0.078
 
 posture_standup_lf_frame: lf
 posture_standup_lf_x: 0.14

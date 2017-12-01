@@ -4,6 +4,8 @@
 # subscribes to [joint_states] and updates Leg objects to store latest joint angles
 # publishes tf based on data in Legs
 
+# subscribes to [pc_text_commands]
+
 
 # calculates joint angles to reach target foot position - defines posture by setting posture_target_angles in Leg objects
 # during each cycle, calculate target angles to send to dynamixels for smooth movement towards target posture
@@ -21,6 +23,8 @@ from std_msgs.msg import String
 from tf_conversions import transformations
 
 from hex_utility import angle_ab, angle_ac, distance_between, get_point, third_side, transform_point_stamped
+
+from hex_msg.msg import LegStates
 
 
 class Body(object):
@@ -44,6 +48,8 @@ class Body(object):
 
                 self.angular_velocity = 0
 
+
+
         def __init__(self, name):
             self.name = name
             self.attachment_x = rospy.get_param(self.name + "_attachment_x")
@@ -52,6 +58,9 @@ class Body(object):
             self.attachment_zrot = rospy.get_param(self.name + "_attachment_zrot")
 
             self.segments = dict()
+
+            self.in_stance = False
+            self.maintain_stance = False
 
             self.segments["coxa"] = Body.Leg.Segment("coxa", None)
             segment_names = [("femur", "coxa"), ("tibia", "femur"), ("tarsus", "tibia")]
@@ -203,6 +212,8 @@ class Body(object):
 
         self.prev_assume_posture_call_time = None
 
+        self.is_on = False
+
 
 
     def define_posture(self, posture_descriptor, tf_buffer=None):
@@ -336,8 +347,12 @@ class Body(object):
                 segment.current_target_angle = segment.current_target_angle + dir * min(degs_per_cycle,
                                                                                         abs(segment.current_target_angle - segment.posture_target_angle))
 
-                if abs(segment.current_angle - segment.posture_target_angle) > 0.5:
+                if abs(segment.current_angle - segment.posture_target_angle) > 1:
                     in_posture = False
+
+
+
+
 
         self.prev_assume_posture_call_time = rospy.get_time()
 
@@ -354,43 +369,26 @@ tf_buffer = None
 def got_text_command(text_command):
     global tf_buffer
 
-    if text_command.data == "storage_posture":
-        body.define_posture("storage")
+    if text_command.data == "turn_on" and not body.is_on:
+        # use actual angles as target angles when initializing
+        for leg in body.legs.values():
+            for segment in leg.segments.values():
+                segment.posture_target_angle = segment.current_angle
+                segment.current_target_angle = segment.current_angle
 
-    elif text_command.data == "standup_posture":
-        body.define_posture("standup", tf_buffer=tf_buffer)
-        # posture_descriptor = list()
-        # for leg in body.legs:
-        #
-        #     for leg in body.legs.values():
-        #         target_point = get_point(leg.name, 0.14, 0, -leg.attachment_z-0.05)
-        #
-        #         segment_velocities = list()
-        #         for segment in leg.segments.values():
-        #             angular_velocity = 50
-        #             segment_velocities.append((segment.name, angular_velocity))
-        #
-        #         posture_descriptor.append((leg.name, target_point, segment_velocities))
-        #
-        # body.define_posture(posture_descriptor, tf_buffer)
+        body.is_on = True
 
-
-    elif text_command.data == "initial_posture":
         body.define_posture("initial", tf_buffer=tf_buffer)
-        # posture_descriptor = list()
-        # for leg in body.legs:
-        #
-        #     for leg in body.legs.values():
-        #         target_point = get_point(leg.name, 0.14, 0, -leg.attachment_z)
-        #
-        #         segment_velocities = list()
-        #         for segment in leg.segments.values():
-        #             angular_velocity = 50
-        #             segment_velocities.append((segment.name, angular_velocity))
-        #
-        #         posture_descriptor.append((leg.name, target_point, segment_velocities))
-        #
-        # body.define_posture(posture_descriptor, tf_buffer)
+
+    elif text_command.data == "turn_off":
+        body.is_on = False
+
+    elif text_command.data == "standup":
+        body.define_posture("standup", tf_buffer=tf_buffer)
+
+    elif text_command.data == "initial":
+        body.define_posture("initial", tf_buffer=tf_buffer)
+
 
 
 def got_joint_states(received_joint_states):
@@ -458,6 +456,9 @@ def got_joint_states(received_joint_states):
 def publish_target_joint_states(target_joint_state_pub):
     global body
 
+    if not body.is_on:
+        return
+
     target_joint_states = JointState()
 
     for leg in body.legs.values():
@@ -511,6 +512,17 @@ def publish_static_tf():
 
     static_transform_broadcaster.sendTransform(t_batch)
 
+def gotLegStates(received_leg_states):
+    """
+
+    :type received_leg_states: LegStates
+    """
+    leg_names = ["rf", "rm", "rr", "lf", "lm", "lr"]
+    for i in range(0,6):
+        leg_name = leg_names[i]
+        leg = body.legs[leg_name]
+        leg.in_stance = received_leg_states.stance_legs[i]
+
 
 def run():
     global transform_broadcaster, body, tf_buffer
@@ -522,7 +534,7 @@ def run():
 
     transform_broadcaster = tf2_ros.TransformBroadcaster()
 
-    target_joint_state_pub = rospy.Publisher('target_joint_states', JointState, queue_size=10)
+    target_joint_state_pub = rospy.Publisher('target_joint_states', JointState, queue_size=3)
 
     rospy.Subscriber("joint_states", JointState, got_joint_states)
 
@@ -530,7 +542,13 @@ def run():
 
     rospy.Subscriber("teleop", Twist, got_teleop)
 
+    rospy.Subscriber("leg_states", LegStates, gotLegStates)
+
     publish_static_tf()
+
+
+
+
 
     cycle_frequency = 100
     cycle_rate = rospy.Rate(cycle_frequency)
