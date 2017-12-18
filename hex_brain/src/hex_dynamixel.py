@@ -1,11 +1,28 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-# reads dynamixels
-#
-# publishes [leg_states]
-# publishes [joint_states]
 
-# subscribes to [target_joint_states], passes targets to dynamixels
+
+
+
+
+
+#               [pc_text_commands]      -->     |                       |       -->         [joint_states]
+#               [goal_joint_states]     -->     |   (hex_dynamixel)     |       -->         [grounded_legs]
+#                                               |                       |
+#                                                         🡹🡻
+#                                               -------------------------
+#                                               |      pypot robot      |
+#                                               -------------------------
+#                                                         🡹🡻
+#                                               -------------------------
+#                                               |      dynamixels       |
+#                                               -------------------------
+
+
+# [pc_text_commands]: turn_on, turn_off
+
+
 
 
 
@@ -13,45 +30,29 @@
 from math import degrees, radians
 
 import rospy
-from hex_msg.msg import LegStates
+from hex_msg.msg import StampedBoolArray
 from pypot import robot
 from sensor_msgs.msg import JointState
 from std_msgs.msg import String
 
+
+
+
+
+
+
 hex_robot = None  # pypot robot
-
-is_on = False
-
-
-class JointAngles(object):
-    def __init__(self, leg_name, coxa_angle=0, femur_angle=0, tibia_angle=0, tarsus_angle=0):
-        self.leg_name = leg_name
-        self.coxa_angle = coxa_angle
-        self.femur_angle = femur_angle
-        self.tibia_angle = tibia_angle
-        self.tarsus_angle = tarsus_angle
-
-
-# servo_ids = list()
-# servo_offsets = list()
-# servo_directions = list()
-# joint_names = list()
-# current_joint_angles = list()
-#
-# stance_legs = list()
-
-
-# target_joint_angles = list()
-# servo_sequence_dict = dict()
-
-
-
-
-
-
 
 
 def robot_config():
+
+
+    """
+    prepares configuration to initialize pypot robot, reads from parameter server
+    """
+
+
+
     leg_names = rospy.get_param("leg_names")
     segment_names = rospy.get_param("segment_names")
 
@@ -93,9 +94,6 @@ def robot_config():
             m_desc["type"] = rospy.get_param(segment_name + "_servo_type")
             m_desc["id"] = rospy.get_param(leg_name + "_" + segment_name + "_servo_id")
 
-            # min_angle = rospy.get_param(segment_name + "_min_angle")
-            # max_angle = rospy.get_param(segment_name + "_max_angle")
-
             min_angle = -180
             max_angle = 180
 
@@ -109,17 +107,34 @@ def robot_config():
 
     return config
 
-def got_target_joint_states(received_target_joint_states):
-    # type: (JointState) -> received_target_joint_states
+def got_text_command(text_command):
+    if text_command.data == "turn_on":
 
-    if hex_robot == None:
+        for motor in hex_robot.motors:
+            motor.goal_position = motor.present_position  # use actual angles as target angles when initializing
+            motor.torque_limit = 100
+            motor.compliant = False
+
+
+    elif text_command.data == "turn_off":
+        for motor in hex_robot.motors:
+            motor.torque_limit = 0
+            motor.compliant = True
+def got_goal_joint_states(received_goal_joint_states):
+    """
+    passes received goal positions to servos
+    """
+
+    # type: (JointState) -> received_goal_joint_states
+
+    if hex_robot._controllers[0].io == None: # when in simulation mode without actual hardware
         return
 
     positions = dict()
 
     js = 0
-    for joint_name in received_target_joint_states.name:
-        joint_position = degrees(received_target_joint_states.position[js])
+    for joint_name in received_goal_joint_states.name:
+        joint_position = degrees(received_goal_joint_states.position[js])
         leg_name = joint_name[:2]
         joint_id = joint_name[3:-6]
 
@@ -127,12 +142,21 @@ def got_target_joint_states(received_target_joint_states):
 
         js += 1
 
-    hex_robot.goto_position(positions, 0.3, "dummy")
+    time_to_reach_position = 0.3
+
+    hex_robot.goto_position(positions, time_to_reach_position, "dummy")
 
 
-def publish_leg_states(publisher):
-    current_leg_states = LegStates()
-    current_leg_states.stamp = rospy.Time.now()
+def publish_grounded_legs(publisher, pub_time):
+
+
+    """
+    identifies grounded legs based on femur loads
+    publishes results to [grounded_legs] topic
+    """
+
+    present_grounded_legs = StampedBoolArray()
+    present_grounded_legs.stamp = pub_time
 
     loads = list()
     for m in hex_robot.femur:
@@ -142,60 +166,44 @@ def publish_leg_states(publisher):
     sorted_loads = sorted(loads)
     avg = sum(sorted_loads[:3]) / 3
 
-    # leg is considered to be in stance when its load is within 90% of the average of three most loaded legs
+    # leg is considered to be grounded when its load is more than [grounded_threshold] of the average of three most loaded legs
+    grounded_threshold = 0.6
+
 
     for i in range(0, 6):
-        in_stance = True
+        grounded = True
         if not hex_robot == None:
-            if loads[i] > avg * 0.6:
-                in_stance = False
-        current_leg_states.stance_legs.append(in_stance)
+            if loads[i] > avg * grounded_threshold:
+                grounded = False
+        present_grounded_legs.values.append(grounded)
 
+        # mark grounded legs with LEDs
         if hex_robot._controllers[0].io is not None:
-            if in_stance:
+            if grounded:
                 hex_robot._controllers[0].io.switch_led_on([hex_robot.femur[i].id])
             else:
                 hex_robot._controllers[0].io.switch_led_off([hex_robot.femur[i].id])
 
-    publisher.publish(current_leg_states)
-
-
-def publish_joint_states(publisher):
-    current_joint_states = JointState()
+    publisher.publish(present_grounded_legs)
+def publish_joint_states(publisher, pub_time):
+    present_joint_states = JointState()
 
     for motor in hex_robot.motors:
         joint_name = motor.name + "_joint"
 
         if hex_robot._controllers[0].io == None:
-            joint_angle = radians(motor.goal_position)
+            present_position = radians(motor.goal_position)
+            present_load = 0
         else:
-            joint_angle = radians(motor.present_position)
+            present_position = radians(motor.present_position)
+            present_load = motor.present_load
 
-        current_joint_states.name.append(joint_name)
-        current_joint_states.position.append(joint_angle)
+        present_joint_states.name.append(joint_name)
+        present_joint_states.position.append(present_position)
+        present_joint_states.effort.append(present_load)
 
-    current_joint_states.header.stamp = rospy.Time.now()
-    publisher.publish(current_joint_states)
-
-
-def got_text_command(text_command):
-    global is_on
-
-    if text_command.data == "turn_on" and not is_on:
-        # use actual angles as target angles when initializing
-        for motor in hex_robot.motors:
-            motor.torque_limit = 100
-            motor.compliant = False
-
-        is_on = True
-
-
-    elif text_command.data == "turn_off":
-        for motor in hex_robot.motors:
-            motor.torque_limit = 0
-            motor.compliant = True
-
-        is_on = False
+    present_joint_states.header.stamp = pub_time
+    publisher.publish(present_joint_states)
 
 
 def run():
@@ -203,12 +211,11 @@ def run():
 
     rospy.init_node('hex_dynamixel', anonymous=True)
 
-    rospy.Subscriber("target_joint_states", JointState, got_target_joint_states, queue_size=1)
-
-    leg_state_pub = rospy.Publisher('leg_states', LegStates, queue_size=10)
-    joint_state_pub = rospy.Publisher('joint_states', JointState, queue_size=10)
-
     rospy.Subscriber("pc_text_commands", String, got_text_command)
+    rospy.Subscriber("goal_joint_states", JointState, got_goal_joint_states, queue_size=1)
+
+    leg_state_pub = rospy.Publisher('grounded_legs', StampedBoolArray, queue_size=10)
+    joint_state_pub = rospy.Publisher('joint_states', JointState, queue_size=10)
 
     try:
         hex_robot = robot.from_config(robot_config())
@@ -221,8 +228,10 @@ def run():
 
     r = rospy.Rate(100)
     while not rospy.is_shutdown():
-        publish_joint_states(joint_state_pub)
-        publish_leg_states(leg_state_pub)
+        pub_time = rospy.Time.now()
+
+        publish_joint_states(joint_state_pub, pub_time)
+        publish_grounded_legs(leg_state_pub, pub_time)
 
         r.sleep()
 

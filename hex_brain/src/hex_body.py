@@ -1,16 +1,135 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-# gets body parameters from robot_description on parameter server
-# subscribes to [joint_states] and updates Leg objects to store latest joint angles
-# publishes tf based on data in Legs
+"""
 
-# subscribes to [pc_text_commands]
+[joint_states]              -->     |                       |
+[grounded_legs]             -->     |                       |       -->         [goal_joint_states]
+[tf]                        -->     |                       |       -->         [tf] : [base_link_flat] -> [{leg_name}_tcs]
+[pc_text_commands]          -->     |                       |
+[teleop]                    -->     |      (hex_body)       |
 
-# publishes [posture_control_rate] = frequency at which target angles are published
 
 
-# calculates joint angles to reach target foot position - defines posture by setting posture_target_angles in Leg objects
-# during each cycle, calculate target angles to send to dynamixels for smooth movement towards target posture
+
+
+                                              🡹🡻
+                                    -------------------------
+                                    |      Body object      |
+                                    -------------------------
+                                       |   - stores body dimensions (gets these from from parameter server)
+                                       |
+                                       |   - stores time-stamped goal joint angles                          |
+                                       |   - stores time-stamped actual joint angles                        |
+                                       |   - stores time-stamped goal foot positions in [base_link_flat]    |
+                                       |   - stores time-stamped actual foot positions in [base_link_flat]  | are used to monitor errors in controlling
+                                       position
+                                       |
+                                       |   - stores time-stamped grounded/not-grounded flags for each leg
+                                       |
+                                       |
+                                       |   -----------------------------
+                                       |---| Inverse kinematics solver | --> joint angles for a leg from goal foot position in [base_link] or [base_link_flat]
+                                       |   -----------------------------
+                                       |
+                                       |   -----------------------------
+                                       |---| Forward kinematics solver | --> foot position in [base_link] from angles:  (a) explicitly provided
+                                       |   -----------------------------                                                (b) goal at a given time
+                                       |                                                                                (c) actual at a given time
+                                       |
+                                       |   ------------------
+                                       |---| Gait generator |  -->  generates foot positions to achieve movements requested by Twist messages in [odom]
+                                       |   ------------------
+
+
+
+
+*****************
+ Gait generation:
+                                                                              ------------------
+       [twist]                   | --> Δx, Δy, Δz, Δrot_x, Δrot_y, Δrot_z --> | Gait generator |
+       [current cycle frequency] |                                            ------------------
+
+
+    ------------------
+    | Gait generator |
+    ------------------
+
+    1) identify stance and swing legs:
+         - leg stays in swing till it becomes grounded
+         - grounded legs stay in stance until they are commanded to swing based on their restrictedness
+           after being commanded to swing, legs must become not-grounded before they can touch down and return to stance
+
+
+
+
+    2) process each stance leg:
+         - check restrictedness based on the latest goal angles; if beyond threshold -- change to swing
+
+         - get latest foot goal position in [base_link_flat] -- this position will be somewhat incorrect as tf for [base_link_flat]
+           arrives with a delay
+
+         - rotate this position by Δrot_x, Δrot_y, Δrot_z, translate by Δx, Δy, Δz -- in [base_link_flat] frame => (new_goal_position) @ current_time
+
+         - adjust (new_goal_position) with x_correction, y_correction, z_correction
+
+         - (new_goal_position)adjusted -> IK solver -> (new goal angles) @ current_time
+
+
+
+    3) process each swing leg:
+         - if leg has left the ground after being switched to swing and has already touched down -- switch to stance
+
+         - update leg's Task Coordinate System using the TCS algorithm
+
+         - determine (new_goal_position) using the swing algorithm
+
+         - adjust (new_goal_position) with x_correction, y_correction, z_correction
+
+         - (new_goal_position)adjusted -> IK solver -> (new goal angles) @ current_time
+
+
+
+    4) get the latest available actual foot position, compare it to target foot position at that time => get x_correction, y_correction, z_correction
+
+
+
+
+
+
+
+**************
+TCS algorithm:
+
+
+
+
+
+
+
+
+****************
+Swing algorithm:
+
+
+
+
+
+
+
+
+**************
+Restrictedness:
+
+
+
+
+
+
+
+
+
+"""
 
 
 
